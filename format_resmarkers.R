@@ -1,7 +1,33 @@
 library(tidyr)
+library(optparse)
 
-resmarkers <- read.table("resistance_marker_module/resmarker_table_2.txt", header=T)
+# Define the command-line arguments
+option_list <- list(
+  make_option(
+    c("--input", "-i"),
+    type = "character",
+    help = "Input file path (e.g., resmarker_table.txt)"
+  ),
+  make_option(
+    c("--output", "-o"),
+    type = "character",
+    help = "Output file path for the formatted data (e.g., resmarker_table_old_format.txt)"
+  )
+)
 
+# Parse the command-line arguments
+opt_parser <- OptionParser(usage = "Usage: %prog [options]", option_list = option_list)
+opt <- parse_args(opt_parser)
+
+# Read the input data
+if (file.exists(opt$input)) {
+  resmarkers <- read.table(opt$input, header = TRUE)
+} else {
+  stop("Input file not found.")
+}
+
+
+#processing
 resmarkers$resmarker <- paste(resmarkers$Gene, resmarkers$CodonID, sep = "_") #resmarkers names
 resmarkers$resmarker_sampleID <- paste(resmarkers$SampleID, resmarkers$resmarker, sep = "_") #column to check for multiple markers in a single sample
 resmarkers$contents <- paste(resmarkers$AA, " [", resmarkers$Reads, "]", sep = "")
@@ -40,3 +66,12 @@ sorted_col_names <- col_names[order(col_names_name, col_names_number)]
 
 # Reorder the columns of new_df
 new_df <- new_df[, sorted_col_names]
+
+# Save the formatted data to the output file
+if (!is.null(opt$output)) {
+  write.csv(new_df, opt$output, row.names = TRUE)
+  cat("Formatted data saved to", opt$output, "\n")
+} else {
+  cat("Formatted data:\n")
+  print(new_df)
+}
