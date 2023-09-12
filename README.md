@@ -3,7 +3,7 @@
 
 ## format_resmarkers.R
 
-This R script converts mad4hatter's resmarkers_table.txt (long format) into the old "report" format. It uses the `tidyr` and `optparse` libraries for data manipulation and command-line argument parsing, respectively.
+This R script converts mad4hatter's resmarkers_table.txt (long format) into the old "report" format. It uses the `tidyr`, `dplyr` and `optparse` libraries for data manipulation and command-line argument parsing, respectively.
 
 ### Usage
 
