@@ -11,7 +11,7 @@ option_list <- list(
   make_option(
     c("--output", "-o"),
     type = "character",
-    help = "Output file path for the formatted data (e.g., resmarker_table_old_format.txt)"
+    help = "Output file path for the formatted data (e.g., resmarker_table_old_format.csv)"
   )
 )
 
@@ -32,11 +32,49 @@ resmarkers$resmarker <- paste(resmarkers$Gene, resmarkers$CodonID, sep = "_") #r
 resmarkers$resmarker_sampleID <- paste(resmarkers$SampleID, resmarkers$resmarker, sep = "_") #column to check for multiple markers in a single sample
 resmarkers$contents <- paste(resmarkers$AA, " [", resmarkers$Reads, "]", sep = "")
 
+#check for missing resmarkers and add NAs when needed before aggregating
+#1) make all possibloe combinations of unique(resmarkers$SampleID) and unique(resmarkers$resmarker)
+combinations <- expand.grid(unique(resmarkers$SampleID), unique(resmarkers$resmarker))
+combined_combinations <- apply(combinations, 1, paste, collapse = "_")
+
+#2) compare to resmarkers$resmarker_sampleID. when the combination is not found, add a new line with the respective sampleID and resmarker and fill ebverything else with NA
+missing_indices <- which(!combined_combinations %in% resmarkers$resmarker_sampleID)
+
+for (index in missing_indices) {
+  # Extract the elements from combined_combinations
+  elements <- combinations[index,]
+  
+  # Create a new row with NA values
+  new_row <- data.frame(
+    SampleID = elements$Var1,
+    GeneID = NA,
+    Gene = NA,
+    CodonID = NA,
+    RefCodon = NA,
+    Codon = NA,
+    CodonStart = NA,
+    CodonRefAlt = NA,
+    RefAA = NA,
+    AA = NA,
+    AARefAlt = NA,
+    Reads = NA,
+    resmarker = elements$Var2,
+    resmarker_sampleID = paste(elements$Var1, elements$Var2, sep="_"),
+    contents = "NA"
+  )
+  
+  # Add the new row to resmarkers
+  resmarkers <- rbind(resmarkers, new_row)
+}
+
+#3)as.actor
 # Create a factor variable for AARefAlt with the desired order
 resmarkers$AARefAlt <- factor(resmarkers$AARefAlt, levels = c("REF", "ALT"), ordered = TRUE)
 
 # Sort resmarkers by resmarker_sampleID and AARefAlt
 resmarkers <- resmarkers[order(resmarkers$resmarker_sampleID, resmarkers$AARefAlt, decreasing = F), ]
+
+
 
 #aggregate contents by resmarker_sampleID 
 agg_contents <- aggregate(contents ~ resmarker_sampleID, data = resmarkers, FUN = paste, collapse = ", ")
