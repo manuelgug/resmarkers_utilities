@@ -1,6 +1,6 @@
 library(tidyr)
 library(optparse)
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 
 # Define the command-line arguments
 option_list <- list(
