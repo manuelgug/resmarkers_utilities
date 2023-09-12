@@ -1,5 +1,6 @@
 library(tidyr)
 library(optparse)
+library(dplyr)
 
 # Define the command-line arguments
 option_list <- list(
@@ -7,11 +8,13 @@ option_list <- list(
     c("--input", "-i"),
     type = "character",
     help = "Input file path (e.g., resmarker_table.txt)"
+#   , default ="resmarker_table.txt"
   ),
   make_option(
     c("--output", "-o"),
     type = "character",
     help = "Output file path for the formatted data (e.g., resmarker_table_old_format.csv)"
+#   , default ="resmarker_table_old_format.csv"
   )
 )
 
@@ -26,6 +29,19 @@ if (file.exists(opt$input)) {
   stop("Input file not found.")
 }
 
+#sum reads when needed
+
+# Group rows by all columns except the last one
+resmarkers <- resmarkers %>%
+  group_by(across(-Reads)) %>%
+  # Sum the last column within each group and replace the original values
+  mutate(Reads = sum(as.numeric(Reads))) %>%
+  # Remove duplicates
+  distinct() %>%
+  # Reset grouping
+  ungroup()
+
+resmarkers<-as.data.frame(resmarkers)
 
 #processing
 resmarkers$resmarker <- paste(resmarkers$Gene, resmarkers$CodonID, sep = "_") #resmarkers names
@@ -60,7 +76,7 @@ for (index in missing_indices) {
     Reads = NA,
     resmarker = elements$Var2,
     resmarker_sampleID = paste(elements$Var1, elements$Var2, sep="_"),
-    contents = "NA"
+    contents = "[NA]"
   )
   
   # Add the new row to resmarkers
